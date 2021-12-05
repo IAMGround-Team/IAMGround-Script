@@ -124,7 +124,7 @@ def is_user_excessive_organization_permission(userArn, policyKey, aws, scan):
             aws.users[partnerArn] = {'UserName': userName}
             aws.get_user_info(partnerArn, userName)
         # 동일한 IAM Group에 속하는 경우
-        if len(set(aws.users[userArn]['RelationUG']) & set(aws.users[partnerArn]['RelationUG'])) == 0:
+        if len(set(aws.users[userArn]['RelationUG']) & set(aws.users[partnerArn]['RelationUG'])) =! 0:
             return False
         policies = scan.get_user_policies_info(aws, partnerArn)
         # user가 속하는 group의 관리형, 인라인 정책

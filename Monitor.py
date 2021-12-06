@@ -228,7 +228,7 @@ def check_policy_by_version(policyKey, pastVersionId, lastVersionId, aws, scan, 
     return related
 
 if __name__ == '__main__':
-    if len(sys.argv) >= 6:
+    if len(sys.argv) <= 6:
         sys.stderr.write("인자가 충분하지 않음\n")
         exit(0)
     
@@ -241,6 +241,9 @@ if __name__ == '__main__':
     eventSource = event['detail']['eventSource']
     if eventSource != "iam.amazonaws.com":
         sys.stderr.write("no iam event!")
+        f = open('./src/scripts/' + sys.argv[6] + '.json', 'w')
+        f.write('error')
+        f.close()
         exit(0)
     
     identityArn = event['detail']['userIdentity']['arn']
@@ -296,7 +299,7 @@ if __name__ == '__main__':
             related = check_policy(lastPolicyDoc, related)
             if responseElements['policyVersion']['isDefaultVersion'] == True:
                 # 이전 버전과 비교하여 권한 검증
-                pastVersionId = sys.argv[6]
+                pastVersionId = sys.argv[7]
                 lastVersionId = responseElements['policyVersion']['versionId']
                 related = check_policy_by_version(policyKey, pastVersionId, lastVersionId, aws, scan, related)
         elif 'SetDefaultPolicyVersion' == eventName:    # SetDefaultPolicyVersion
@@ -312,7 +315,7 @@ if __name__ == '__main__':
             aws.get_managed_policy_statement(policyKey)
             related = check_policy(aws.permissions[policyKey]['Document'], related)
             # 이전 버전과 비교하여 권한 검증
-            pastVersionId = sys.argv[6]
+            pastVersionId = sys.argv[7]
             related = check_policy_by_version(policyKey, pastVersionId, lastVersionId, aws, scan, related)
         elif 'Put' in eventName and 'Policy' in eventName:  # PutUserPolicy, PutGroupPolicy, PutRolePolicy
             policyName = requestParameters['policyName']
@@ -434,4 +437,6 @@ if __name__ == '__main__':
     finally:
         result = cvt.convert_monitor_log(log, related)
         jsonResult = json.dumps(result)
-        print(jsonResult, end="")
+        f = open('./src/scripts/' + sys.argv[6] + '.json', 'w')
+        f.write(jsonResult)
+        f.close()

@@ -58,21 +58,20 @@ def add_dict_key_value(resultDict, key, value, arn=None):
     return resultDict
 
 # Dictionary 형태의 스캔 결과를 scan info로 변환
-def covert_scan_info(targetDict):
-    infoDict = {}
-    i = 0
+def convert_scan_info(targetDict):
+    infoList = []
     for itemNo, item in targetDict.items():
         if itemNo.startswith('2.1.'):
-            infoDict, i = convert_unused_permission_scan_info(itemNo, item, infoDict, i)
+            infoList = convert_unused_permission_scan_info(itemNo, item, infoList)
         elif itemNo == '2.4.1':
-            infoDict, i = convert_excessive_org_scan_info(itemNo, item, infoDict, i)
+            infoList = convert_excessive_org_scan_info(itemNo, item, infoList)
         elif itemNo == '2.5.1':
-            infoDict, i = convert_same_policy_scan_info(itemNo, item, infoDict, i)
+            infoList = convert_same_policy_scan_info(itemNo, item, infoList)
         else:
-            infoDict, i = convert_basic_scan_info(itemNo, item, infoDict, i)
-    return infoDict
+            infoList = convert_basic_scan_info(itemNo, item, infoList)
+    return infoList
 
-def convert_basic_scan_info(itemNo, item, infoDict, i):
+def convert_basic_scan_info(itemNo, item, infoList):
     baseInfo = {}
     baseInfo['reason_category'] = itemNo
     baseInfo['recommand'] = ref.recommand[itemNo]  
@@ -103,12 +102,11 @@ def convert_basic_scan_info(itemNo, item, infoDict, i):
             info['reason_detail'] = details
         
         new_info = copy.deepcopy(info)
-        infoDict[i] = new_info
-        i = i + 1
-    return infoDict, i
+        infoList.append(new_info)
+    return infoList
 
 # 미사용 서비스/권한/리소스에 관한 Dictionary 형태의 스캔 결과를 scan info로 변환
-def convert_unused_permission_scan_info(itemNo, item, infoDict, i):
+def convert_unused_permission_scan_info(itemNo, item, infoList):
     baseInfo = {}
     baseInfo['reason_category'] = itemNo
     baseInfo['recommand'] = {} 
@@ -179,12 +177,11 @@ def convert_unused_permission_scan_info(itemNo, item, infoDict, i):
                     info['reason_detail'].append(details)
 
         new_info = copy.deepcopy(info)
-        infoDict[i] = new_info
-        i += 1
-    return infoDict, i
+        infoList.append(new_info)
+    return infoList
     
 # 조직도 기반 과도한 권한에 관한 Dictionary 형태의 스캔 결과를 scan info로 변환
-def convert_excessive_org_scan_info(itemNo, item, infoDict, i):
+def convert_excessive_org_scan_info(itemNo, item, infoList):
     org_info = {}
     for content in item:
         if 'targetArn' in content.keys():
@@ -194,18 +191,19 @@ def convert_excessive_org_scan_info(itemNo, item, infoDict, i):
                 org = content['detail'].pop('organization')
                 org_info[resource_arn] = org
     
-    infoDict, i = convert_unused_permission_scan_info(itemNo, item, infoDict, i)
+    infoList = convert_unused_permission_scan_info(itemNo, item, infoList)
 
+    infoListLen = len(infoList)
     for num in range(len(item)):
-        info = infoDict[i-1-num]
+        info = infoList[infoListLen-1-num]
         resource_arn = info['resource_arn']
         org = org_info[resource_arn]
         for idx in range(len(info['reason_detail'])):
             info['reason_detail'][idx] = info['reason_detail'][idx].replace("$ORG", str(org))
-    return infoDict, i
+    return infoList
 
 # 동일한 정책에 관한 Dictionary 형태의 스캔 결과를 scan info로 변환
-def convert_same_policy_scan_info(itemNo, item, infoDict, i):
+def convert_same_policy_scan_info(itemNo, item, infoList):
     baseInfo = {}
     baseInfo['reason_category'] = itemNo
     baseInfo['recommand'] = ref.recommand[itemNo]  
@@ -236,9 +234,96 @@ def convert_same_policy_scan_info(itemNo, item, infoDict, i):
             info['reason_detail'] = details
         
         new_info = copy.deepcopy(info)
-        infoDict[i] = new_info
-        i = i + 1
-    return infoDict, i
+        infoList.append(new_info)
+    return infoList
+
+# for convert_iam_resource()
+def make_user_format(user, iam):
+    infoDict = {}
+    info = {'resource_name': user['UserName'], "resource_type": 1, "creation": user['CreateDate'].isoformat()}
+    # access key
+    accessKeyResponse = iam.list_access_keys(UserName=user['UserName'])
+    accessKeyData = accessKeyResponse['AccessKeyMetadata']
+    for idx in range(0, 2):
+        infoKey = 'accessKey'+str(idx+1)
+        try:
+            accessKey = accessKeyData[idx]['AccessKeyId']
+        except:
+            accessKey = None
+        info[infoKey] = accessKey
+    # defaultPolicyVersion
+    info['defaultPolicyVersion'] = None
+    # relation
+    relation = []
+    relation.extend(user['RelationUMP'])
+    relation.extend(user['RelationUIP'])
+    info['relation'] = relation
+    infoDict[user['Arn']] = info
+    return infoDict
+
+# for convert_iam_resource()
+def make_group_format(group):
+    infoDict = {}
+    info = {'resource_name': group['GroupName'], "resource_type": 2, "creation": group['CreateDate'].isoformat()}
+    # access key
+    for idx in range(0, 2):
+        infoKey = 'accessKey'+str(idx+1)
+        accessKey = None
+        info[infoKey] = accessKey
+    # defaultPolicyVersion
+    info['defaultPolicyVersion'] = None
+    # relation
+    relation = []
+    relation.extend(group['RelationGU'])
+    relation.extend(group['RelationGMP'])
+    relation.extend(group['RelationGIP'])
+    info['relation'] = relation
+    infoDict[group['Arn']] = info
+    return infoDict
+
+# for convert_iam_resource()
+def make_role_format(role):
+    infoDict = {}
+    info = {'resource_name': role['RoleName'], "resource_type": 3, "creation": role['CreateDate'].isoformat()}
+    # access key
+    for idx in range(0, 2):
+        infoKey = 'accessKey'+str(idx+1)
+        accessKey = None
+        info[infoKey] = accessKey
+    # defaultPolicyVersion
+    info['defaultPolicyVersion'] = None
+    # relation
+    relation = None
+    infoDict[role['Arn']] = info
+    return infoDict
+
+# for convert_iam_resource()
+def make_policy_format(policy):
+    infoDict = {}
+    info = {'resource_name': policy['PolicyName'], "resource_type": 4, "creation": policy['CreateDate'].isoformat()}
+    # access key
+    for idx in range(0, 2):
+        infoKey = 'accessKey'+str(idx+1)
+        accessKey = None
+        info[infoKey] = accessKey
+    # defaultPolicyVersion
+    info['defaultPolicyVersion'] = policy['DefaultVersionId']
+    # relation
+    relation = None
+    infoDict[policy['Arn']] = info
+    return infoDict
+
+def convert_iam_resource(aws):
+    resourceList = []
+    for user in aws.users.values():
+        resourceList.append(make_user_format(user, aws.iam))
+    for group in aws.groups.values():
+        resourceList.append(make_group_format(group))
+    for role in aws.roles.values():
+        resourceList.append(make_role_format(role))
+    for policy in aws.policies.values():
+        resourceList.append(make_policy_format(policy))
+    return resourceList
 
 def convert_monitor_log(log, related):
     for itemNo, item in related.items():

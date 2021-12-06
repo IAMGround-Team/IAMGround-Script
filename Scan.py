@@ -17,7 +17,7 @@ class AWSIAMInfo:
         self.policies = {}
         self.permissions = {}
 
-    def create_iam_client(self, accessKey, secretKey, region):
+    def create_iam_client(self, accessKey, secretKey, region, fileName):
         try:  
             session = boto3.Session(
                 aws_access_key_id=accessKey, 
@@ -28,6 +28,9 @@ class AWSIAMInfo:
             response = self.iam.list_account_aliases()
         except:
             sys.stderr.write("부적절한 access key, secret key 또는 IAM 서비스 연결 실패 오류\n")
+            f = open('./src/scripts/' + sys.argv[6] + '.json', 'w')
+            f.write('error')
+            f.close()
             exit(0)
     
     def get_iam_resource(self):
@@ -843,12 +846,12 @@ class ScanInfo:
 
 
 if __name__ == '__main__':
-    if len(sys.argv) >= 6:
+    if len(sys.argv) <= 6:
         sys.stderr.write("인자가 충분하지 않음\n")
         exit(0)
 
     aws = AWSIAMInfo()
-    aws.create_iam_client(sys.argv[1], sys.argv[2], sys.argv[3])
+    aws.create_iam_client(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[6])
     aws.history = json.loads(sys.argv[4])
     aws.orgTable = json.loads(sys.argv[5])
     
@@ -953,7 +956,11 @@ if __name__ == '__main__':
     # 중복된 정책
     scan.check_same_policy(aws.permissions, aws.policies)
 
-    result = cvt.covert_scan_info(scan.infoDict)
+    scanData = cvt.convert_scan_info(scan.infoDict)
+    iamResource = cvt.convert_iam_resource(aws)
+    result = {'scanData': scanData, 'IAMResource': iamResource}
     jsonResult = json.dumps(result)
-    print(jsonResult, end="")
+    f = open('./src/scripts/' + sys.argv[6] + '.json', 'w')
+    f.write(jsonResult)
+    f.close()
  

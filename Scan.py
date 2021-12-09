@@ -471,32 +471,55 @@ class ScanInfo:
         return accessedHistory90Days
     
     # 해당 IAM entity의 90일 이내 action 기록을 기반으로 Service, Action statement 생성
-    def make_action_statement(self, action, accessedHistory):
+    def make_action_statement(self, action, accessedHistory, support, notSupport):
         actionStatement = []
         if action == '*':
-            for service in accessedHistory:
+            for service in history:
                 serviceName = service['ServiceNamespace']
+                if len(service['ActionName']) == len(sa.ServiceActionDict[serviceName]):
+                    new = serviceName + ":*"
+                    actionStatement.append(new)
+                    continue
                 for actionName in service['ActionName']:
                     new = serviceName+":"+actionName
                     actionStatement.append(new)
+            for service in notSupport:
+                new = service+":*"
+                actionStatement.append(new)
+            if len(actionStatement) == (len(support) + len(notSupport)):
+                actionStatement = [action] 
         else:
-            action = action.split(":")
-            for service in accessedHistory:
-                serviceName = service['ServiceNamespace']
-                if action[0] == serviceName:
-                    if action[1] == "*":
-                        for actionName in service['ActionName']:
-                            new = serviceName+":"+actionName
-                            actionStatement.append(new)
-                    else:
-                        for actionName in service['ActionName']:
-                            if action[1] == actionName:
-                                new = serviceName+":"+actionName
+            serviceAction = action.split(":")
+            serviceName = serviceAction[0]
+            actionName = serviceAction[1]
+            if serviceName in notSupport:
+                actionStatement.append(action)
+            else:
+                for service in history:
+                    if serviceName == service['ServiceNamespace']:
+                        perList = sa.convert_service_action(action)
+                        if actionName == "*":
+                            for historyActionName in service['ActionName']:
+                                new = serviceName+":"+historyActionName
                                 actionStatement.append(new)
+                        else:
+                            for per in perList:
+                                perAction = per.split(":")[-1]
+                                for historyActionName in service['ActionName']:
+                                    if perAction == historyActionName:
+                                        new = serviceName+":"+historyActionName
+                                        actionStatement.append(new)
+                        if set(actionStatement) & set(perList) == set(actionStatement):
+                            actionStatement = [action]
+                        break
         return actionStatement
 
     # 해당 IAM entity의 90일 이내 사용 기록을 기반으로 최소 권한 document 생성
     def make_new_document_with_accessed_history(self, document, accessedHistory):
+        supportAWSService = ['s3', 'ec2', 'lambda', 'sns', 'cloudfront', 'ebs', 'iam', 'sqs', 'elasticbeanstalk', 'rds']
+        notSupportAWSService = list(sa.ServiceActionDict.keys())
+        for service in supportAWSService:
+            notSupportAWSService.remove(service)
         newDocument = {}
         statementList = document['Document']['Statement']
         content = []
@@ -507,10 +530,10 @@ class ScanInfo:
                     newAction = []
                     if isinstance(newStatement['Action'], list):
                         for action in newStatement['Action']:
-                            newAction.extend(self.make_action_statement(action, accessedHistory))
+                            newAction.extend(self.make_action_statement(action, accessedHistory, supportAWSService, notSupportAWSService))
                     else:
                         action = newStatement['Action']
-                        newAction.extend(self.make_action_statement(action, accessedHistory))
+                        newAction.extend(self.make_action_statement(action, accessedHistory, supportAWSService, notSupportAWSService))
                     newStatement['Action'] = newAction
                     if len(newAction) == 0:
                         newStatement = {}

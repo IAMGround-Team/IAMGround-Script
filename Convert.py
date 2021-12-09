@@ -175,9 +175,9 @@ def convert_unused_permission_scan_info(itemNo, item, infoList):
                     details = ref.detail[itemNo][1]
                     details = details.replace("$NAME", name).replace("$POLICY", policyName)
                     info['reason_detail'].append(details)
-
-        new_info = copy.deepcopy(info)
-        infoList.append(new_info)
+        if len(info['reason_detail']) > 0:
+            new_info = copy.deepcopy(info)
+            infoList.append(new_info)
     return infoList
     
 # 조직도 기반 과도한 권한에 관한 Dictionary 형태의 스캔 결과를 scan info로 변환

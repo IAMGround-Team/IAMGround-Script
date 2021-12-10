@@ -1,6 +1,7 @@
 import ItemRef as ref
 import datetime
 import copy
+import ServiceAction as sa
 
 # Set criteria time base on ISO 8601+00:00 
 def set_criteria_time(criteria, point='previous'): 
@@ -129,39 +130,26 @@ def convert_unused_permission_scan_info(itemNo, item, infoList):
         if 'targetArn' in content.keys():
             info['resource_arn'] = content['targetArn']
         if 'detail' in content.keys():
-            for policyName in content['detail']:
+            for policyName in content['detail'].keys():
                 policy = content['detail'][policyName]
                 policyName = policyName.split('/')[-1]
                 # origin vs new => same, modified, removed
-                if 'NewStatement' in policy.keys():
-                    modify_flag = False
+                if 'NewDocument' in policy.keys():
                     origin = policy['Document']['Statement']
-                    new = policy['NewStatement']['Statement']
-                    if len(origin) == len(new):
-                        for idx in range(len(new)):  
-                            if(modify_flag): 
-                                break
-                            if new[idx]['Effect'] != 'Deny' and 'Action' in new[idx].keys():
-                                if isinstance(origin[idx]['Action'], list):
-                                    if len(origin[idx]['Action']) != len(new[idx]['Action']):
-                                        modify_flag = True
-                                else:
-                                    if origin[idx]['Action'] != new[idx]['Action'][0]:
-                                        modify_flag = True
-                    else:
-                        modify_flag = True
-                    
-                    if(modify_flag):    # modified
+                    new = policy['NewDocument']['Statement']
+                    originPer = sa.get_permission_from_policy_statements(origin)
+                    newPer = sa.get_permission_from_policy_statements(new)
+                    if not sa.is_permission_same(originPer, newPer):    # modified   
                         relation = ref.recommand[itemNo][0]
                         relation = relation.replace("$NAME1", name).replace("$TYPE1", policy['EntityType']).replace("$NAME2", policy['EntityName'])
                         relation = relation.replace("$TYPE2", policy['PolicyType']).replace("$NAME3", policyName)
-                        recommand = {policyName: {'relation': relation, 'origin': policy['Document'], 'new': policy['NewStatement']}}
+                        recommand = {policyName: {'relation': relation, 'origin': policy['Document'], 'new': policy['NewDocument']}}
                         info['recommand'].update(recommand)
 
                         details = ref.detail[itemNo][0]
                         details = details.replace("$NAME", name).replace("$POLICY", policyName)
                         info['reason_detail'].append(details)
-                    # else:
+                    else:
                         # print(policyName + " same")
                 else:   # removed
                     relation = ref.recommand[itemNo][0]

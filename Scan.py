@@ -457,17 +457,14 @@ class ScanInfo:
         # service, action 90일 이내 접근한 것만 추출
         for service in history:
             # 90일 이내 service 접근
-            if 'LastAuthenticated' in service.keys():
-                service_last_auth = service['LastAuthenticated']
-                if service_last_auth >= self.criteria90Day:
-                    content = {'ServiceNamespace':service['ServiceNamespace'], 'ActionName':[]}
-                    if 'TrackedActionsLastAccessed' in service.keys():
-                        for action in service['TrackedActionsLastAccessed']:
-                            if 'LastAccessedTime' in action.keys():
-                                action_last_access = action['LastAccessedTime']
-                                if action_last_access >= self.criteria90Day:
-                                    content['ActionName'].append(action['ActionName'])
-                    accessedHistory90Days.append(content)
+            content = {'ServiceNamespace':service['ServiceNamespace'], 'ActionName':[]}
+            if 'TrackedActionsLastAccessed' in service.keys():
+                for action in service['TrackedActionsLastAccessed']:
+                    if 'LastAccessedTime' in action.keys():
+                        action_last_access = action['LastAccessedTime']
+                        if action_last_access >= self.criteria90Day:
+                            content['ActionName'].append(action['ActionName'])
+            accessedHistory90Days.append(content)
         return accessedHistory90Days
     
     # 해당 IAM entity의 90일 이내 action 기록을 기반으로 Service, Action statement 생성
@@ -495,7 +492,7 @@ class ScanInfo:
             if serviceName in notSupport:
                 actionStatement.append(action)
             else:
-                for service in history:
+                for service in accessedHistory:
                     if serviceName == service['ServiceNamespace']:
                         perList = sa.convert_service_action(action)
                         if actionName == "*":
@@ -622,7 +619,7 @@ class ScanInfo:
         # user가 속하는 group의 관리형, 인라인 정책
         for groupArn in info['RelationUG']:
             policies.update(self.get_group_policies_info(aws, groupArn))
-        if not bool(aws.history):
+        if bool(aws.history):
             # accessed history와 비교하여 과도한 권한 추출
             for policyKey, document in policies.items():
                 newDocument = self.make_new_document_with_accessed_history(document, accessedHistory)
@@ -632,7 +629,7 @@ class ScanInfo:
 
     def check_group_has_excessive_permission(self, aws, arn, accessedHistory):
         policies = self.get_group_policies_info(aws, arn)
-        if not bool(aws.history):
+        if bool(aws.history):
             # accessed history와 비교하여 과도한 권한 추출
             for policyKey, document in policies.items():
                 newDocument = self.make_new_document_with_accessed_history(document, accessedHistory)
@@ -642,7 +639,7 @@ class ScanInfo:
 
     def check_role_has_excessive_permission(self, aws, arn, accessedHistory):
         policies = self.get_role_policies_info(aws, arn)
-        if not bool(aws.history):
+        if bool(aws.history):
             # accessed history와 비교하여 과도한 권한 추출
             for policyKey, document in policies.items():
                 newDocument = self.make_new_document_with_accessed_history(document, accessedHistory)

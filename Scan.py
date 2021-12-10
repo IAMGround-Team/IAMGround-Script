@@ -474,7 +474,7 @@ class ScanInfo:
     def make_action_statement(self, action, accessedHistory, support, notSupport):
         actionStatement = []
         if action == '*':
-            for service in history:
+            for service in accessedHistory:
                 serviceName = service['ServiceNamespace']
                 if len(service['ActionName']) == len(sa.ServiceActionDict[serviceName]):
                     new = serviceName + ":*"
@@ -622,7 +622,7 @@ class ScanInfo:
         # user가 속하는 group의 관리형, 인라인 정책
         for groupArn in info['RelationUG']:
             policies.update(self.get_group_policies_info(aws, groupArn))
-        if len(aws.history) > 0:
+        if not bool(aws.history):
             # accessed history와 비교하여 과도한 권한 추출
             for policyKey, document in policies.items():
                 newDocument = self.make_new_document_with_accessed_history(document, accessedHistory)
@@ -632,7 +632,7 @@ class ScanInfo:
 
     def check_group_has_excessive_permission(self, aws, arn, accessedHistory):
         policies = self.get_group_policies_info(aws, arn)
-        if len(aws.history) > 0:
+        if not bool(aws.history):
             # accessed history와 비교하여 과도한 권한 추출
             for policyKey, document in policies.items():
                 newDocument = self.make_new_document_with_accessed_history(document, accessedHistory)
@@ -642,7 +642,7 @@ class ScanInfo:
 
     def check_role_has_excessive_permission(self, aws, arn, accessedHistory):
         policies = self.get_role_policies_info(aws, arn)
-        if len(aws.history) > 0:
+        if not bool(aws.history):
             # accessed history와 비교하여 과도한 권한 추출
             for policyKey, document in policies.items():
                 newDocument = self.make_new_document_with_accessed_history(document, accessedHistory)

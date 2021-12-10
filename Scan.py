@@ -506,7 +506,7 @@ class ScanInfo:
                                     if perAction == historyActionName:
                                         new = serviceName+":"+historyActionName
                                         actionStatement.append(new)
-                        if set(actionStatement) & set(perList) == set(actionStatement):
+                        if set(actionStatement) == set(perList):
                             actionStatement = [action]
                         break
         return actionStatement

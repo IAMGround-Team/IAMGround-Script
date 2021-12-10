@@ -149,7 +149,7 @@ def convert_unused_permission_scan_info(itemNo, item, infoList):
                         details = ref.detail[itemNo][0]
                         details = details.replace("$NAME", name).replace("$POLICY", policyName)
                         info['reason_detail'].append(details)
-                    else:
+                    # else:
                         # print(policyName + " same")
                 else:   # removed
                     relation = ref.recommand[itemNo][0]

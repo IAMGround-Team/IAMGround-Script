@@ -622,30 +622,33 @@ class ScanInfo:
         # user가 속하는 group의 관리형, 인라인 정책
         for groupArn in info['RelationUG']:
             policies.update(self.get_group_policies_info(aws, groupArn))
-        # accessed history와 비교하여 과도한 권한 추출
-        for policyKey, document in policies.items():
-            newDocument = self.make_new_document_with_accessed_history(document, accessedHistory)
-            if newDocument != None:
-                policies[policyKey]['NewDocument'] = newDocument
-        cvt.add_dict_key_value(self.infoDict, '2.1.1', policies, arn)
+        if len(aws.history) > 0:
+            # accessed history와 비교하여 과도한 권한 추출
+            for policyKey, document in policies.items():
+                newDocument = self.make_new_document_with_accessed_history(document, accessedHistory)
+                if newDocument != None:
+                    policies[policyKey]['NewDocument'] = newDocument
+            cvt.add_dict_key_value(self.infoDict, '2.1.1', policies, arn)
 
     def check_group_has_excessive_permission(self, aws, arn, accessedHistory):
         policies = self.get_group_policies_info(aws, arn)
-        # accessed history와 비교하여 과도한 권한 추출
-        for policyKey, document in policies.items():
-            newDocument = self.make_new_document_with_accessed_history(document, accessedHistory)
-            if newDocument != None:
-                policies[policyKey]['NewDocument'] = newDocument
-        cvt.add_dict_key_value(self.infoDict, '2.1.2', policies, arn)
+        if len(aws.history) > 0:
+            # accessed history와 비교하여 과도한 권한 추출
+            for policyKey, document in policies.items():
+                newDocument = self.make_new_document_with_accessed_history(document, accessedHistory)
+                if newDocument != None:
+                    policies[policyKey]['NewDocument'] = newDocument
+            cvt.add_dict_key_value(self.infoDict, '2.1.2', policies, arn)
 
     def check_role_has_excessive_permission(self, aws, arn, accessedHistory):
         policies = self.get_role_policies_info(aws, arn)
-        # accessed history와 비교하여 과도한 권한 추출
-        for policyKey, document in policies.items():
-            newDocument = self.make_new_document_with_accessed_history(document, accessedHistory)
-            if newDocument != None:
-                policies[policyKey]['NewDocument'] = newDocument
-        cvt.add_dict_key_value(self.infoDict, '2.1.3', policies, arn)
+        if len(aws.history) > 0:
+            # accessed history와 비교하여 과도한 권한 추출
+            for policyKey, document in policies.items():
+                newDocument = self.make_new_document_with_accessed_history(document, accessedHistory)
+                if newDocument != None:
+                    policies[policyKey]['NewDocument'] = newDocument
+            cvt.add_dict_key_value(self.infoDict, '2.1.3', policies, arn)
 
     def check_user_used_90Days(self, report):
         reason = []

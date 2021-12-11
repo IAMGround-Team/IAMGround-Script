@@ -2,6 +2,7 @@
 import boto3 
 import sys
 import json
+import yaml
 import copy
 import ServiceAction as sa
 import Convert as cvt
@@ -258,7 +259,10 @@ if __name__ == '__main__':
     scan = ScanInfo()
     aws = AWSIAMInfo()
     aws.create_iam_client(sys.argv[1], sys.argv[2], sys.argv[3])
-    event = json.loads(sys.argv[4])
+    try:
+        event = json.loads(sys.argv[4])
+    except:
+        event = yaml.loads(sys.argv[4])
     aws.orgTable = json.loads(sys.argv[5])
     
     eventSource = event['detail']['eventSource']

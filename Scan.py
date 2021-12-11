@@ -448,7 +448,7 @@ class ScanInfo:
         criteriaTime = datetime.datetime(2014, 4, 1, 0, 0, 0, 0).isoformat()
         UploadTime = cert['UploadDate'].isoformat()
         if UploadTime < criteriaTime:
-            content = {"uploadTime": UploadTime}
+            content = {"uploadTime": cvt.set_KST_timezone(UploadTime)}
             reason.append(content)
         cvt.add_dict_key_value(self.infoDict, '1.4.2', reason, cert['Arn'])
 
@@ -659,10 +659,10 @@ class ScanInfo:
                 if last == None or lastUsed >= last :
                     last = lastUsed
         if last == None:
-            content = {report['user_creation_time']: "활동한 기록이 없습니다"}
+            content = {cvt.set_KST_timezone(report['user_creation_time']): "활동한 기록이 없습니다"}
             reason.append(content)
         else:
-            content = {report['user_creation_time']: last+"에 활동했습니다"}
+            content = {cvt.set_KST_timezone(report['user_creation_time']): cvt.set_KST_timezone(last)+"에 활동했습니다"}
             reason.append(content)
         cvt.add_dict_key_value(self.infoDict, '2.2.1', reason, report['arn'])
 
@@ -671,10 +671,10 @@ class ScanInfo:
         if bool(report['Role']['RoleLastUsed']): 
             last_used = report['Role']['RoleLastUsed']['LastUsedDate'].isoformat(timespec="seconds")
             if last_used < self.criteria90Day:
-                content = {report['Role']['CreateDate'].isoformat(timespec="seconds"): last_used+"에 활동했습니다"}
+                content = {cvt.set_KST_timezone(report['Role']['CreateDate'].isoformat(timespec="seconds")): cvt.set_KST_timezone(last_used)+"에 활동했습니다"}
                 reason.append(content)
         else:
-            content = {report['Role']['CreateDate'].isoformat(timespec="seconds"): "활동한 기록이 없습니다"}
+            content = {cvt.set_KST_timezone(report['Role']['CreateDate'].isoformat(timespec="seconds")): "활동한 기록이 없습니다"}
             reason.append(content)
         cvt.add_dict_key_value(self.infoDict, '2.2.3', reason, report['Role']['Arn'])
 
@@ -690,10 +690,10 @@ class ScanInfo:
                 if last == None or service_last_auth >= last :
                     last = service_last_auth
         if last == None:
-            content = {info['CreateDate'].isoformat(timespec="seconds"): "활동한 기록이 없습니다"}
+            content = {cvt.set_KST_timezone(info['CreateDate'].isoformat(timespec="seconds")): "활동한 기록이 없습니다"}
             reason.append(content)
         else:
-            content = {info['CreateDate'].isoformat(timespec="seconds"): last+"에 활동했습니다"}
+            content = {cvt.set_KST_timezone(info['CreateDate'].isoformat(timespec="seconds")): cvt.set_KST_timezone(last)+"에 활동했습니다"}
             reason.append(content)
         if entityType == 'GROUP':
             cvt.add_dict_key_value(self.infoDict, '2.2.2', reason, arn)
@@ -715,14 +715,14 @@ class ScanInfo:
         for groupArn in info['RelationUG']:
             if self.entity_has_policy_directly(groups[groupArn]):
                 return
-        content = {"create": info['CreateDate'].isoformat(timespec="seconds")}
+        content = {"create": cvt.set_KST_timezone(info['CreateDate'].isoformat(timespec="seconds"))}
         reason.append(content)
         cvt.add_dict_key_value(self.infoDict, '2.3.1', reason, info['Arn'])
 
     def check_group_has_user(self, info):
         reason = []
         if len(info['RelationGU']) == 0:
-            content = {"create": info['CreateDate'].isoformat(timespec="seconds")}
+            content = {"create": cvt.set_KST_timezone(info['CreateDate'].isoformat(timespec="seconds"))}
             reason.append(content)
             cvt.add_dict_key_value(self.infoDict, '2.3.2', reason, info['Arn'])
 
@@ -730,14 +730,14 @@ class ScanInfo:
         reason = []
         if self.entity_has_policy_directly(info):
             return
-        content = {"create": info['CreateDate'].isoformat(timespec="seconds")}
+        content = {"create": cvt.set_KST_timezone(info['CreateDate'].isoformat(timespec="seconds"))}
         reason.append(content)
         cvt.add_dict_key_value(self.infoDict, '2.3.3', reason, info['Arn'])
 
     def check_policy_attached(self, info):
         reason = []
         if info['AttachmentCount'] == 0:
-            content = {'create': info['CreateDate'].isoformat(timespec="seconds")}
+            content = {'create': cvt.set_KST_timezone(info['CreateDate'].isoformat(timespec="seconds"))}
             reason.append(content)
             cvt.add_dict_key_value(self.infoDict, '2.3.4', reason, info['Arn'])
 
@@ -864,7 +864,7 @@ class ScanInfo:
                     else:
                         pastKey = targetKey
                         recentKey = partnerKey  
-                    reason = [{"create": policies[recentKey]['CreateDate'].isoformat(timespec="seconds"), "serviceCount": serviceCount, "permissionCount": perCount, "pastPolicyArn": pastKey, "pastPolicyCreate": policies[pastKey]['CreateDate'].isoformat(timespec="seconds")}]
+                    reason = [{"create": cvt.set_KST_timezone(policies[recentKey]['CreateDate'].isoformat(timespec="seconds")), "serviceCount": serviceCount, "permissionCount": perCount, "pastPolicyArn": pastKey, "pastPolicyCreate": cvt.set_KST_timezone(policies[pastKey]['CreateDate'].isoformat(timespec="seconds"))}]
                     cvt.add_dict_key_value(self.infoDict, '2.5.1', reason, recentKey)
 
 
@@ -982,6 +982,8 @@ if __name__ == '__main__':
     scanData = cvt.convert_scan_info(scan.infoDict)
     iamResource = cvt.convert_iam_resource(aws)
     result = {'scanData': scanData, 'IAMResource': iamResource}
+    with open('scan_new.json', 'w') as outfile:
+        json.dump(result, outfile)
     jsonResult = json.dumps(result)
     f = open('./src/scripts/' + sys.argv[6] + '.json', 'w')
     f.write(jsonResult)

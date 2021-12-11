@@ -1,6 +1,7 @@
-import ItemRef as ref
-import datetime
 import copy
+import datetime
+from pytz import timezone
+import ItemRef as ref
 import ServiceAction as sa
 
 # Set criteria time base on ISO 8601+00:00 
@@ -22,6 +23,14 @@ def cal_time_gap(criteriaTime, point='previous'):
     else:
         time_gap = criteriaTime - now
     return time_gap
+
+# isoFormat time UTC+09:00(한국)으로 설정
+def set_KST_timezone(isoTime):
+    KST = timezone('Asia/Seoul')
+    time = datetime.datetime.fromisoformat(isoTime)
+    time = time.astimezone(KST)
+    time = time.isoformat(timespec="seconds")
+    return time
 
 # 데이터 포멧 맞추기
 def make_format(value, arn=None):

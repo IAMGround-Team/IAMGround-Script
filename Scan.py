@@ -982,8 +982,6 @@ if __name__ == '__main__':
     scanData = cvt.convert_scan_info(scan.infoDict)
     iamResource = cvt.convert_iam_resource(aws)
     result = {'scanData': scanData, 'IAMResource': iamResource}
-    with open('scan_new.json', 'w') as outfile:
-        json.dump(result, outfile)
     jsonResult = json.dumps(result)
     f = open('./src/scripts/' + sys.argv[6] + '.json', 'w')
     f.write(jsonResult)

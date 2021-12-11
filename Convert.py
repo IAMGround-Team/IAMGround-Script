@@ -237,7 +237,7 @@ def convert_same_policy_scan_info(itemNo, item, infoList):
 # for convert_iam_resource()
 def make_user_format(user, iam):
     infoDict = {}
-    info = {'resource_name': user['UserName'], "resource_type": 1, "creation": user['CreateDate'].isoformat()}
+    info = {'resource_name': user['UserName'], "resource_type": 1, "creation": set_KST_timezone(user['CreateDate'].isoformat())}
     # access key
     accessKeyResponse = iam.list_access_keys(UserName=user['UserName'])
     accessKeyData = accessKeyResponse['AccessKeyMetadata']
@@ -261,7 +261,7 @@ def make_user_format(user, iam):
 # for convert_iam_resource()
 def make_group_format(group):
     infoDict = {}
-    info = {'resource_name': group['GroupName'], "resource_type": 2, "creation": group['CreateDate'].isoformat()}
+    info = {'resource_name': group['GroupName'], "resource_type": 2, "creation": set_KST_timezone(group['CreateDate'].isoformat())}
     # access key
     for idx in range(0, 2):
         infoKey = 'accessKey'+str(idx+1)
@@ -281,7 +281,7 @@ def make_group_format(group):
 # for convert_iam_resource()
 def make_role_format(role):
     infoDict = {}
-    info = {'resource_name': role['RoleName'], "resource_type": 3, "creation": role['CreateDate'].isoformat()}
+    info = {'resource_name': role['RoleName'], "resource_type": 3, "creation": set_KST_timezone(role['CreateDate'].isoformat())}
     # access key
     for idx in range(0, 2):
         infoKey = 'accessKey'+str(idx+1)
@@ -297,7 +297,7 @@ def make_role_format(role):
 # for convert_iam_resource()
 def make_policy_format(policy):
     infoDict = {}
-    info = {'resource_name': policy['PolicyName'], "resource_type": 4, "creation": policy['CreateDate'].isoformat()}
+    info = {'resource_name': policy['PolicyName'], "resource_type": 4, "creation": set_KST_timezone(policy['CreateDate'].isoformat())}
     # access key
     for idx in range(0, 2):
         infoKey = 'accessKey'+str(idx+1)

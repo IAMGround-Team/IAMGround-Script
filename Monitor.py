@@ -13,16 +13,38 @@ def get_reqeust_target(requestParameters):
         if 'policy' not in key:
             return value
 
-# targets(list or string)에 * 존재 여부 확인
-def check_exist_asterisk(targets):
+# service or action에 * 존재 여부 확인
+def check_action_exist_asterisk(targets):
     asterisk_flag = False
     if isinstance(targets, list):
-        for action in targets:
-            if '*' in action:
+        for permission in targets:
+            if permission == '*':
+                asterisk_flag = True
+                break
+            else:
+                action = permission.split(":")[-1]
+                if action == '*':
+                    asterisk_flag = True
+                    break     
+    else:
+        if targets == '*':
+            asterisk_flag = True
+        else:
+            action = targets.split(":")[-1]
+            if action == '*':
+                asterisk_flag = True
+    return asterisk_flag
+
+# resource에 * 존재 여부 확인
+def check_resource_exist_asterisk(targets):
+    asterisk_flag = False
+    if isinstance(targets, list):
+        for resource in targets:
+            if resource == '*':
                 asterisk_flag = True
                 break
     else:
-        if '*' in targets:
+        if targets == '*':
             asterisk_flag = True
     return asterisk_flag
 
@@ -30,7 +52,7 @@ def check_exist_asterisk(targets):
 def check_policy(document, related):
     actionAsterisk_flag = False # * 사용(False == secure)
     resourceAsterisk_flag = False # * 사용(False == secure)
-    no_condition_flag = True # 조건 사용 안함(False == secure)
+    no_condition_flag = False # 조건 사용 안함(False == secure)
     no_deny_flag = True # Deny 명시 안함(False == secure)
     allowNotAction_flag = False # Effect:Allow NotAction 조합 사용(False == secure)
 
@@ -42,17 +64,18 @@ def check_policy(document, related):
         effect = statement['Effect']
         if effect == 'Allow':
             if 'Action' in statement.keys():
-                actions = statement['Action']
-                actionAsterisk_flag = check_exist_asterisk(actions)
-                if 'Resource' in statement.keys():
+                if actionAsterisk_flag == False:
+                    actions = statement['Action']
+                    actionAsterisk_flag = check_action_exist_asterisk(actions)
+                if resourceAsterisk_flag == False and 'Resource' in statement.keys():
                     resources = statement['Resource']
-                    resourceAsterisk_flag = check_exist_asterisk(resources)          
+                    resourceAsterisk_flag = check_resource_exist_asterisk(resources)        
             if 'NotAction' in statement.keys():
                 allowNotAction_flag = True
         elif effect == 'Deny':
             no_deny_flag = False
-        if 'Condition' in statement.keys():
-            no_condition_flag = False
+        # if 'Condition' in statement.keys():
+        #     no_condition_flag = False
     flagList = [actionAsterisk_flag, resourceAsterisk_flag, no_condition_flag, no_deny_flag, allowNotAction_flag]
     for idx in range(len(flagList)):
         if flagList[idx] == True:

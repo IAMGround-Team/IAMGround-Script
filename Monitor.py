@@ -262,7 +262,7 @@ if __name__ == '__main__':
     try:
         event = json.loads(sys.argv[4])
     except:
-        event = yaml.loads(sys.argv[4])
+        event = yaml.load(sys.argv[4])
     aws.orgTable = json.loads(sys.argv[5])
     
     eventSource = event['detail']['eventSource']
@@ -297,8 +297,11 @@ if __name__ == '__main__':
     log['resource_arn'] = []
     log['reason_category'] = [] 
     log['reason_detail'] = []
-    for key, value in requestParameters.items():
-        log['resource_name'].append(value)
+    try:
+        for key, value in requestParameters.items():
+            log['resource_name'].append(value)
+    except:
+        pass
     
 
     related = {}

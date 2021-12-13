@@ -363,7 +363,7 @@ class ScanInfo:
 
     def check_pwPolicy_usage(self, pwPolicy):
         if pwPolicy == None:
-            cvt.add_dict_key_value(self.infoDict, '1.3.1', {'pwPolicyUse': 0})
+            cvt.add_dict_key_value(self.infoDict, '1.3.1', [{'pwPolicyUse': 0}])
 
     def check_strong_pwPolicy_used(self, pwPolicy):
         if pwPolicy != None:
@@ -376,7 +376,7 @@ class ScanInfo:
                     reason.append(content)
                     i += 1 
         else:
-            reason = {0:'특수문자', 1:'숫자', 2:'대문자', 3:'소문자'}
+            reason = [{0:'특수문자', 1:'숫자', 2:'대문자', 3:'소문자'}]
         cvt.add_dict_key_value(self.infoDict, '1.3.2', reason)
 
     def check_long_pw(self, pwPolicy):
@@ -386,7 +386,7 @@ class ScanInfo:
                 content = {"minPWLen": pwPolicy['MinimumPasswordLength']}
                 reason.append(content)
         else:
-            reason = {"minPWLen": 8}
+            reason = [{"minPWLen": 8}]
         cvt.add_dict_key_value(self.infoDict, '1.3.3', reason)
 
     def check_pw_reused(self, pwPolicy):
@@ -401,7 +401,7 @@ class ScanInfo:
                 content = {"있지 않습니다": ' '}
                 reason.append(content)
         else:
-            reason = {"있지 않습니다": ' '}
+            reason = [{"있지 않습니다": ' '}]
         cvt.add_dict_key_value(self.infoDict, '1.3.4', reason)
 
     def check_pw_expiration_period_90Days(self, pwPolicy):
@@ -416,7 +416,7 @@ class ScanInfo:
                 content = {"있지 않습니다": ' '}
                 reason.append(content)
         else:
-            reason = {"있지 않습니다": ' '}
+            reason = [{"있지 않습니다": ' '}]
         cvt.add_dict_key_value(self.infoDict, '1.3.5', reason)
 
     def check_pw_expriy_7Days(self, report):

@@ -272,9 +272,9 @@ class AWSIAMInfo:
 class ScanInfo:
     def __init__(self):
         self.infoDict = {}
-        self.criteria30Day = cvt.set_criteria_time(1)
-        self.criteria7Day = cvt.set_criteria_time(90, 'after')
-        self.criteria90Day = cvt.set_criteria_time(1)
+        self.criteria30Day = cvt.set_criteria_time(30)
+        self.criteria7Day = cvt.set_criteria_time(7, 'after')
+        self.criteria90Day = cvt.set_criteria_time(90)
 
     def check_root_used_30Days(self, report):
         reason = []
@@ -425,9 +425,9 @@ class ScanInfo:
         if (nextRotate != 'N/A' and nextRotate <= self.criteria7Day):  
             timeGap = cvt.cal_time_gap(nextRotate, 'after')
             if timeGap.days >= 0:
-                content = {"지났습니다": (90-int(timeGap.days))} # 수정
+                content = {"남았습니다": timeGap.days}
             else:
-                content = {"지났습니다": -(timeGap.days+1)}
+                content = {"지났습니다": -(int(timeGap.days)+1)}
             reason.append(content)
         cvt.add_dict_key_value(self.infoDict, '1.3.6', reason, report['arn'])
     

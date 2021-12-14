@@ -109,7 +109,7 @@ def convert_basic_scan_info(itemNo, item, infoList):
                     base = ref.detail[itemNo]
                     base = base.replace("$NAME", name).replace("$KEY", str(key)).replace("$VALUE", str(value))                 
                     details = details + base
-            info['reason_detail'] = details
+            info['reason_detail'] = [details]
         
         new_info = copy.deepcopy(info)
         infoList.append(new_info)
@@ -228,7 +228,7 @@ def convert_same_policy_scan_info(itemNo, item, infoList):
                 details = details.replace("$CREATE_RECENT", detail['create'])
                 details = details.replace("$SERVICE", str(detail['serviceCount'])).replace("$PERMISSION", str(detail['permissionCount']))
                 details = details.replace("$CREATE_PAST", detail['pastPolicyCreate']).replace("$PAST", detail['pastPolicyArn'])
-            info['reason_detail'] = details
+            info['reason_detail'] = [details]
         
         new_info = copy.deepcopy(info)
         infoList.append(new_info)

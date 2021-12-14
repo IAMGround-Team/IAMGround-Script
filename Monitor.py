@@ -290,7 +290,10 @@ if __name__ == '__main__':
     log['region'] = event['detail']['awsRegion']
     log['service'] = 'iam'
     log['api_name'] = eventName
-    log['result'] = 1   # SUCCESS
+    if 'errorCode' in event['detail'].keys():
+        log['result'] = 0   # FAIL
+    else:
+        log['result'] = 1   # SUCCESS
     # log['raw_data'] = event
 
     log['resource_name'] = []

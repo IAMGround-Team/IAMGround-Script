@@ -272,9 +272,9 @@ class AWSIAMInfo:
 class ScanInfo:
     def __init__(self):
         self.infoDict = {}
-        self.criteria30Day = cvt.set_criteria_time(30)
-        self.criteria7Day = cvt.set_criteria_time(7, 'after')
-        self.criteria90Day = cvt.set_criteria_time(90)
+        self.criteria30Day = cvt.set_criteria_time(1)
+        self.criteria7Day = cvt.set_criteria_time(90, 'after')
+        self.criteria90Day = cvt.set_criteria_time(1)
 
     def check_root_used_30Days(self, report):
         reason = []
@@ -425,7 +425,7 @@ class ScanInfo:
         if (nextRotate != 'N/A' and nextRotate <= self.criteria7Day):  
             timeGap = cvt.cal_time_gap(nextRotate, 'after')
             if timeGap.days >= 0:
-                content = {"남았습니다": timeGap.days}
+                content = {"지났습니다": (90-int(timeGap.days))} # 수정
             else:
                 content = {"지났습니다": -(timeGap.days+1)}
             reason.append(content)
@@ -473,6 +473,8 @@ class ScanInfo:
         if action == '*':
             for service in accessedHistory:
                 serviceName = service['ServiceNamespace']
+                if serviceName == 'signin':
+                    continue
                 if len(service['ActionName']) == len(sa.ServiceActionDict[serviceName]):
                     new = serviceName + ":*"
                     actionStatement.append(new)
@@ -491,7 +493,7 @@ class ScanInfo:
             actionName = serviceAction[1]
             if serviceName in notSupport:
                 actionStatement.append(action)
-            else:
+            elif serviceName != 'signin':
                 for service in accessedHistory:
                     if serviceName == service['ServiceNamespace']:
                         perList = sa.convert_service_action(action)
@@ -871,6 +873,8 @@ class ScanInfo:
 if __name__ == '__main__':
     if len(sys.argv) <= 6:
         sys.stderr.write("인자가 충분하지 않음\n")
+        f.write('error')
+        f.close()
         exit(0)
 
     aws = AWSIAMInfo()
@@ -973,7 +977,7 @@ if __name__ == '__main__':
                 sshResponse = aws.iam.list_ssh_public_keys(UserName=info['UserName'], Marker=response['Marker'])
         scan.check_2_ssh_pub_active(sshPubKeys, userArn)
         scan.check_ssh_pub_upload_90Days(sshPubKeys, userArn)
-    
+
     # 조직도 기반 과도한 권한
     scan.check_excessive_organization_permission(aws)
     # 중복된 정책
@@ -986,4 +990,3 @@ if __name__ == '__main__':
     f = open('./src/scripts/' + sys.argv[6] + '.json', 'w')
     f.write(jsonResult)
     f.close()
- 

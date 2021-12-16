@@ -262,12 +262,19 @@ class AWSIAMInfo:
                 response = self.iam.get_service_last_accessed_details(JobId=jobResponse['JobId'], Marker=response['Marker'])
         return serviceLastAccessList
     
-    # 조직을 가진 userArn 리스트
+    # 현재 aws iam user로 존재하며 조직을 가진 userArn 리스트
     def get_organization_users(self):
         orgUsers = []
         for org, userList in self.orgTable.items():
             orgUsers.extend(userList)
-        self.orgUsers = list(set(orgUsers))
+        orgUsers = list(set(orgUsers))
+        notExistUser = []
+        for user in orgUsers:
+            if user not in list(self.users.keys()):
+                notExistUser.append(user)
+        orgUsers = list(set(orgUsers) - set(notExistUser))
+        self.orgUsers = orgUsers
+
 
 class ScanInfo:
     def __init__(self):
@@ -765,6 +772,7 @@ class ScanInfo:
                     orgList.append(org)
                     partners.extend(users)
             partners = list(set(partners) - set([targetUser]))
+            partners = list(set(partners) & set(aws.orgUsers))  # 현재 aws iam user로 존재하는 조직원만
             # 같은 조직원과 비교하여 과도하게(추가로) 가진 권한 파악
             if len(partners) > 0:
                 targetInfo = aws.users[targetUser]
